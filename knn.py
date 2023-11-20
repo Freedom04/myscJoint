@@ -10,7 +10,7 @@ from config import Config
 
 def neighbor_hit_cnt(rna_cnt, neighbor_indexs):
     """
-    calculate the frequence of each rna label in reighbors
+    calculate the frequence of each rna label in neighbors
     """
     hit_cnt = np.zeros(rna_cnt)
     for i in range(neighbor_indexs.shape[0]):
@@ -39,7 +39,11 @@ def compute_hit_conf(knn_label, rna_labels, neighbor_indexs, hit_cnts):
     conf_scores = np.zeros(num_samples)
     for i in range(num_samples):
         for j in range(neighbor_indexs.shape[1]):
-            if knn_label[i] == np.argmax(rna_labels[neighbor_indexs[i][j]]):
+            # print(rna_labels[neighbor_indexs[i][j]])
+            # print(np.argmax(rna_labels[neighbor_indexs[i][j]]))
+            # 这里肯定有问题，代码写错了
+            # if knn_label[i] == np.argmax(rna_labels[neighbor_indexs[i][j]]):
+            if knn_label[i] == rna_labels[neighbor_indexs[i][j]]:
                 conf_scores[i] += 1/hit_cnts[neighbor_indexs[i][j]]
             else:
                 conf_scores[i] -= 1/hit_cnts[neighbor_indexs[i][j]]
@@ -114,18 +118,19 @@ def KNN(config, neighbors = 30, knn_rna_samples = 20000):
     
     print('[KNN] knn')
     atac_predict = neigh.predict(atac_embeddings)
-    _, top10_neighbors = neigh.kneighbors(atac_embeddings, neighbors)
+    _, top30_neighbors = neigh.kneighbors(atac_embeddings, neighbors)
 
     #conf_scores = compute_scores(atac_predict, rna_prediction_knn, top10_neighbors, neighbors)
-    hit_cnts = neighbor_hit_cnt(len(rna_label_knn), top10_neighbors)
-    conf_scores = compute_hit_conf(atac_predict, rna_label_knn, top10_neighbors, hit_cnts)
-    print(rna_embedding_knn.shape)
-    print(atac_embeddings.shape)
-    print(atac_predict.shape)
-    print(top10_neighbors.shape)
-    print(hit_cnts.shape)
-    print(hit_cnts.sum())
-    print(conf_scores.shape)
+    hit_cnts = neighbor_hit_cnt(len(rna_label_knn), top30_neighbors)
+    conf_scores = compute_hit_conf(atac_predict, rna_label_knn, top30_neighbors, hit_cnts)
+    # print(rna_label_knn.shape)
+    # print(rna_embedding_knn.shape)
+    # print(atac_embeddings.shape)
+    # print(atac_predict.shape)
+    # print(f"top30_neighbors's shape: {top30_neighbors.shape}")
+    # print(hit_cnts.shape)
+    # print(hit_cnts.sum())
+    # print(conf_scores.shape)
     cnt = 0
     for i, db_name in enumerate(db_names):        
         np.savetxt('./output/' + db_name + '_knn_predictions.txt', atac_predict[cnt:cnt+db_sizes[i]])
