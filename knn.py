@@ -120,7 +120,7 @@ def KNN(config, neighbors = 30, knn_rna_samples = 20000):
     atac_predict = neigh.predict(atac_embeddings)
     _, top30_neighbors = neigh.kneighbors(atac_embeddings, neighbors)
 
-    #conf_scores = compute_scores(atac_predict, rna_prediction_knn, top10_neighbors, neighbors)
+    # conf_scores = compute_scores(atac_predict, rna_prediction_knn, top30_neighbors, neighbors)
     hit_cnts = neighbor_hit_cnt(len(rna_label_knn), top30_neighbors)
     conf_scores = compute_hit_conf(atac_predict, rna_label_knn, top30_neighbors, hit_cnts)
     # print(rna_label_knn.shape)
@@ -130,7 +130,7 @@ def KNN(config, neighbors = 30, knn_rna_samples = 20000):
     # print(f"top30_neighbors's shape: {top30_neighbors.shape}")
     # print(hit_cnts.shape)
     # print(hit_cnts.sum())
-    # print(conf_scores.shape)
+    print(f"mean conf_score: {conf_scores.mean()}")
     cnt = 0
     for i, db_name in enumerate(db_names):        
         np.savetxt('./output/' + db_name + '_knn_predictions.txt', atac_predict[cnt:cnt+db_sizes[i]])
