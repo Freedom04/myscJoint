@@ -40,15 +40,14 @@ class TrainingProcessStage1():
         # initialize dataset       
         if self.config.use_cuda:  
             # 使用多个GPU来加速训练，但未指定参数device_ids，感觉还是使用单GPU训练, 我进行了修改，使用两块GPU
-            self.model_encoder = Net_encoder(config.input_size).to(self.config.device)
-            self.model_cell = Net_cell(config.number_of_class).to(self.config.device)
-            # self.model_encoder = torch.nn.DataParallel(Net_encoder(config.input_size).to(self.config.device), device_ids=config.device_ids)
-            # self.model_cell = torch.nn.DataParallel(Net_cell(config.number_of_class).to(self.config.device), device_ids=config.device_ids)
+            self.model_encoder = torch.nn.DataParallel(Net_encoder(config.input_size).to(self.config.device), device_ids=config.device_ids)
+            self.model_cell = torch.nn.DataParallel(Net_cell(config.number_of_class).to(self.config.device), device_ids=config.device_ids)
         else:
             self.model_encoder = Net_encoder(config.input_size).to(self.config.device)
             self.model_cell = Net_cell(config.number_of_class).to(self.config.device)
                 
         # initialize criterion (loss)
+        # 初始化论文中提到的三种损失函数
         self.criterion_cell = CellLoss()
         self.criterion_encoding = EncodingLoss(dim=64, p=config.p, use_gpu = self.config.use_cuda)
         self.l1_regular = L1regularization()
@@ -94,25 +93,24 @@ class TrainingProcessStage1():
             iter_rna_loaders.append(def_cycle(rna_loader))
         for atac_loader in self.train_atac_loaders:
             iter_atac_loaders.append(def_cycle(atac_loader))
-                
+        
+
         for batch_idx in range(self.training_iters):
             # rna forward
             rna_embeddings = []
             rna_cell_predictions = []
             rna_labels = []
-            # for step, (rna_dta, rna_label) in enumerate(self.train_rna_loaders):
-
             for iter_rna_loader in iter_rna_loaders:
                 rna_data, rna_label = next(iter_rna_loader) 
-                print(f"rna_data's size : {rna_data.size()},\n rna_label's size: {rna_label.size()}")   
+                # print(f"rna_data's size : {rna_data.size()},\n rna_label's size: {rna_label.size()}")   
                 # prepare data
                 rna_data, rna_label = prepare_input([rna_data, rna_label], self.config)
-                print(f"rna_data's size : {rna_data.size()},\n rna_label's size: {rna_label.size()}")
+                # print(f"rna_data's size : {rna_data.size()},\n rna_label's size: {rna_label.size()}")
                 # model forward
                 rna_embedding = self.model_encoder(rna_data)
-                print(f"rna_embedding's size: {rna_embedding.size()}")
+                # print(f"rna_embedding's size: {rna_embedding.size()}")
                 rna_cell_prediction = self.model_cell(rna_embedding)
-                print(f"rna_cell_prediction's size: {rna_cell_prediction.size()}")
+                # print(f"rna_cell_prediction's size: {rna_cell_prediction.size()}")
                 rna_embeddings.append(rna_embedding)
                 rna_cell_predictions.append(rna_cell_prediction)
                 rna_labels.append(rna_label)
@@ -124,8 +122,8 @@ class TrainingProcessStage1():
                 atac_data = next(iter_atac_loader)    
                 # prepare data
                 atac_data = prepare_input([atac_data], self.config)[0]
-                print(f"atac_data's size: {atac_data.size()}")
-                print(f"atac_data:\n {atac_data}")
+                # print(f"atac_data's size: {atac_data.size()}")
+                # print(f"atac_data:\n {atac_data}")
                 # model forward
                 atac_embedding = self.model_encoder(atac_data)
                 atac_cell_prediction = self.model_cell(atac_embedding)
@@ -135,10 +133,10 @@ class TrainingProcessStage1():
             
             
             # caculate loss  
-            print(f"rna_cell_predictions's size: {len(rna_cell_predictions)}")
-            print(f"rna_labels.size(): {len(rna_labels)}")
-            print(f"rna_cell_predictions[0]' size: {rna_cell_predictions[0].size()}")
-            print(f"rna_labels[0]'s size: {rna_labels[0].size()}")
+            # print(f"rna_cell_predictions's size: {len(rna_cell_predictions)}")
+            # print(f"rna_labels.size(): {len(rna_labels)}")
+            # print(f"rna_cell_predictions[0]' size: {rna_cell_predictions[0].size()}")
+            # print(f"rna_labels[0]'s size: {rna_labels[0].size()}")
             # 计算当前batch，使用rna预测 cell type 交叉熵损失函数
             cell_loss = self.criterion_cell(rna_cell_predictions[0], rna_labels[0])
             for i in range(1, len(rna_cell_predictions)):
@@ -184,10 +182,8 @@ class TrainingProcessStage1():
         
         
     def write_embeddings(self):
-        # set the module in evaluation model
         self.model_encoder.eval()
         self.model_cell.eval()
-
         if not os.path.exists("output/"):
             os.makedirs("output/")
         
@@ -208,9 +204,7 @@ class TrainingProcessStage1():
                 rna_cell_prediction = rna_cell_prediction.data.cpu().numpy()
                 
                 # normalization & softmax
-                # norm 用于求矩阵范数
                 rna_embedding = rna_embedding / norm(rna_embedding, axis=1, keepdims=True)
-                # softmax(x) = np.exp(x)/sum(np.exp(x))
                 rna_cell_prediction = softmax(rna_cell_prediction, axis=1)
                                 
                 # write embeddings

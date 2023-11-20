@@ -214,8 +214,6 @@ class PrepareDataloader:
                 self.test_atac_loaders.append(trainloader)
 
     def getloader(self):
-        print(self.num_of_atac)
-        print(config.batch_size)
         return self.train_rna_loaders, self.test_rna_loaders, self.train_atac_loaders, self.test_atac_loaders, int(self.num_of_atac/self.config.batch_size)
     
 

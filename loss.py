@@ -52,7 +52,6 @@ def reduction_loss(embedding, identity_matrix, size):
     # torch.mean()不指定dim时，返回所有元素的均值
     # the last term of NNDR loss function
     loss = loss + torch.mean(torch.abs(embedding))
-    print(torch.mean(torch.abs(embedding)))
     return loss
 
 
