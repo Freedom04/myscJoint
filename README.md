@@ -44,14 +44,14 @@ scJoint requires simple data preprocessing with the input dimension equal to the
 ### 4.3 Loss function
 
 1. **NNER Loss.** In a spirit similar to PCA, the NNDR loss aims to capture low dimensional, orthogonal features when projecting each data batch into the embedding space. 
-   $$
+$$
    \begin{equation}
    	\begin{aligned}
    \mathcal{L}_{\text{NNDR}}\left( \mathcal{B},\theta \right) &=\left( \frac{1}{BD}\sum_{b\in \mathcal{B}}{\sum_{j=1}^D{\left| f_{\theta ,b}\left( j \right) -\bar{f}_{\theta ,\cdot}\left( j \right) \right|}} \right) ^{-1} \\
    &+\frac{1}{D^2}\sum_{i\ne j}{\left| \Sigma _{\theta ,\cdot}\left( i,j \right) \right|} +\frac{1}{BD}\sum_{b\in \mathcal{B}}{\sum_{j=1}^D{\left| \bar{f}_{\theta ,\cdot}\left( j \right) \right|}}
    	\end{aligned}
    \end{equation}
-   $$
+$$
    
 
    - The first term calculates the mean of the distance from each cell to the geometric center. 
