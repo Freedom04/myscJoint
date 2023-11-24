@@ -6,7 +6,7 @@ class Config(object):
         DB = 'db4_control'
         self.use_cuda = True
         self.threads = 1
-        os.environ['CUDA_VISIBLE_DEVICES'] = "0, 1"
+        os.environ['CUDA_VISIBLE_DEVICES'] = "0"
         if not self.use_cuda:
             self.device = torch.device('cpu')
         else:
@@ -101,7 +101,7 @@ class Config(object):
             self.with_crossentorpy = True
             self.seed = 1
             self.checkpoint = '' 
-            self.device_ids = [0, 1]
+            self.device_ids = [0]
 
 
 
