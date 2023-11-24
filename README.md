@@ -1,4 +1,4 @@
-# Read the paper: scJoint: transfer learning for data integration of single-cell RNA-seq and ATAC-seq
+# Implementing scJoint
 
 [TOC]
 
@@ -34,6 +34,8 @@ The core of scJoint is a semi-supervised approach to co-train labeled data (scRN
 
 scJoint consists of three main steps.
 
+![scJoint](resources/scJoint.png)
+
 - Step 1 performs joint dimension reduction and modality alignment in a common embedding space through a novel neural network based dimension reduction (NNDR) loss and s cosine similarity loss respectively.
 
 - Step 2 treats each cell in scATAC-seq data as a query, identifies the k-nearest neighbours (KNN) among scRNAseq cells by measuring their distances in the common embedding space, and transfers the cell type labels from scRNA-seq to scATAC-seq via majority vote.
@@ -44,14 +46,14 @@ scJoint requires simple data preprocessing with the input dimension equal to the
 ### 4.3 Loss function
 
 1. **NNER Loss.** In a spirit similar to PCA, the NNDR loss aims to capture low dimensional, orthogonal features when projecting each data batch into the embedding space. 
-$$
+   $$
    \begin{equation}
    	\begin{aligned}
    \mathcal{L}_{\text{NNDR}}\left( \mathcal{B},\theta \right) &=\left( \frac{1}{BD}\sum_{b\in \mathcal{B}}{\sum_{j=1}^D{\left| f_{\theta ,b}\left( j \right) -\bar{f}_{\theta ,\cdot}\left( j \right) \right|}} \right) ^{-1} \\
    &+\frac{1}{D^2}\sum_{i\ne j}{\left| \Sigma _{\theta ,\cdot}\left( i,j \right) \right|} +\frac{1}{BD}\sum_{b\in \mathcal{B}}{\sum_{j=1}^D{\left| \bar{f}_{\theta ,\cdot}\left( j \right) \right|}}
    	\end{aligned}
    \end{equation}
-$$
+   $$
    
 
    - The first term calculates the mean of the distance from each cell to the geometric center. 
@@ -72,11 +74,98 @@ $$
 \mathcal{L}_{\text {entropy }}\left(\mathcal{B}^{(s)}, \theta\right)=-\frac{1}{B} \sum_{b \in \mathcal{B}^{(s)}} \sum_{k=1}^K 1\left(y_b^{(s)}=k\right) \log g_{\theta, b}^{(s)}(k)
 $$
 
+## 5 scJoint enables accurate integration of single-cell multi-modal data across biological condition
+
+### 5.1 tSNE visualisation
+
+<img src="resources/jointVisualisation.png" alt="jointVisualisation" style="zoom: 27%;" />
+
+### 5.2 Sihouette Coefficient
+
+One popular method for measuring the quality of clusters is the **silhouette coefficient**.
+
+**What is the Silhouette Coefficient?**
+
+- The silhouette coefficient is a metric that measures how well each data point fits into its assigned cluster. It combines information about both the **cohesion** (how close a data point is to other points in its own cluster) and the **separation** (how far a data point is from points in other clusters) of the data point.
+
+- The coefficient ranges from -1 to 1, where a value close to 1 indicates a well-clustered data point, a value close to 0 suggests overlapping clusters and a value close to -1 indicates a misclassified data point.
+
+- A higher silhouette score indicates that the data points are well-clustered, with clear separation between clusters and tight cohesion within each cluster. Conversely, a lower silhouette score suggests that the clustering may be less accurate, with overlapping clusters or points that are not well-assigned to their respective clusters.
+
+**Calculating the Silhouette Coefficient: Step-by-Step**
+
+1. For each data point, calculate two values:
+
+>— Average distance to all other data points within the same cluster (cohesion).
+> — Average distance to all data points in the nearest neighboring cluster (separation).
+
+2. Compute the silhouette coefficient for each data point using the formula:
+
+> silhouette coefficient = (separation — cohesion) / max(separation, cohesion)
+
+3. Calculate the average silhouette coefficient across all data points to obtain the overall silhouette score for the clustering result.
+
 ## 5 Data preprocessing
 
 ### 5.1 Multi-modal data (CITE-seq and ASAP-seq PBMC data)
 
 The ASAP-seq and CITEseq data were downloaded from GEO accession number [GSE156478](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE156478), which included the fragment files and antibody-derived tags (ADTs) matrices for ASAP-seq, the raw unique molecular identifier (UMI) and ADT matrices for CITE-seq, from both control and stimulated conditions.
+
+**ASAP-seq data download**
+
+1. [the fragment files for ASAP-seq from control condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732109)
+
+| **Supplementary file**                            | **Size** | **Download**                                                 | **File type/resource** |
+| ------------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732109_CD28_CD3_control_ASAP_fragments.tsv.gz | 802.9 Mb | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732109/suppl/GSM4732109_CD28_CD3_control_ASAP_fragments.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732109&format=file&file=GSM4732109_CD28_CD3_control_ASAP_fragments.tsv.gz) | TSV                    |
+
+2. [antibody-derived tags (ADTs) matrices for ASAP-seq from control condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732110)
+
+| **Supplementary file**                      | **Size** | **Download**                                                 | **File type/resource** |
+| ------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732110_CD28_CD3_control_ASAP_ADT.tsv.gz | 11.8 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732110/suppl/GSM4732110_CD28_CD3_control_ASAP_ADT.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732110&format=file&file=GSM4732110_CD28_CD3_control_ASAP_ADT.tsv.gz) | TSV                    |
+
+3. [the fragment files for ASAP-seq from simulated condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732111)
+
+| **Supplementary file**                         | **Size** | **Download**                                                 | **File type/resource** |
+| ---------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732111_CD28_CD3_stim_ASAP_fragments.tsv.gz | 1.1 Gb   | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732111/suppl/GSM4732111_CD28_CD3_stim_ASAP_fragments.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732111&format=file&file=GSM4732111_CD28_CD3_stim_ASAP_fragments.tsv.gz) | TSV                    |
+
+4. [antibody-derived tags (ADTs) matrices for ASAP-seq from simulated condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732112)
+
+| **Supplementary file**                   | **Size** | **Download**                                                 | **File type/resource** |
+| ---------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732112_CD28_CD3_stim_ASAP_ADT.tsv.gz | 14.0 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732112/suppl/GSM4732112_CD28_CD3_stim_ASAP_ADT.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732112&format=file&file=GSM4732112_CD28_CD3_stim_ASAP_ADT.tsv.gz) | TSV                    |
+
+**CITE-seq data download**
+
+1. [the raw unique molecular identifier (UMI) for CITE-seq from control condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732113)
+
+| **Supplementary file**                               | **Size** | **Download**                                                 | **File type/resource** |
+| ---------------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732113_CD28_CD3_control_CITE_GEX_barcodes.tsv.gz | 28.5 Kb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732113/suppl/GSM4732113_CD28_CD3_control_CITE_GEX_barcodes.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732113&format=file&file=GSM4732113_CD28_CD3_control_CITE_GEX_barcodes.tsv.gz) | TSV                    |
+| GSM4732113_CD28_CD3_control_CITE_GEX_features.tsv.gz | 297.6 Kb | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732113/suppl/GSM4732113_CD28_CD3_control_CITE_GEX_features.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732113&format=file&file=GSM4732113_CD28_CD3_control_CITE_GEX_features.tsv.gz) | TSV                    |
+| GSM4732113_CD28_CD3_control_CITE_GEX_matrix.tsv.gz   | 38.6 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732113/suppl/GSM4732113_CD28_CD3_control_CITE_GEX_matrix.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732113&format=file&file=GSM4732113_CD28_CD3_control_CITE_GEX_matrix.tsv.gz) | TSV                    |
+
+2. [ADT matrices for CITE-seq from control condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732114)
+
+| **Supplementary file**                      | **Size** | **Download**                                                 | **File type/resource** |
+| ------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732114_CD28_CD3_control_CITE_ADT.tsv.gz | 41.0 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732114/suppl/GSM4732114_CD28_CD3_control_CITE_ADT.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732114&format=file&file=GSM4732114_CD28_CD3_control_CITE_ADT.tsv.gz) | TSV                    |
+
+3. [the raw unique molecular identifier (UMI) for CITE-seq from simulated condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732115)
+
+| **Supplementary file**                            | **Size** | **Download**                                                 | **File type/resource** |
+| ------------------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732115_CD28_CD3_stim_CITE_GEX_barcodes.tsv.gz | 21.5 Kb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732115/suppl/GSM4732115_CD28_CD3_stim_CITE_GEX_barcodes.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732115&format=file&file=GSM4732115_CD28_CD3_stim_CITE_GEX_barcodes.tsv.gz) | TSV                    |
+| GSM4732115_CD28_CD3_stim_CITE_GEX_features.tsv.gz | 297.6 Kb | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732115/suppl/GSM4732115_CD28_CD3_stim_CITE_GEX_features.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732115&format=file&file=GSM4732115_CD28_CD3_stim_CITE_GEX_features.tsv.gz) | TSV                    |
+| GSM4732115_CD28_CD3_stim_CITE_GEX_matrix.tsv.gz   | 36.4 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732115/suppl/GSM4732115_CD28_CD3_stim_CITE_GEX_matrix.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732115&format=file&file=GSM4732115_CD28_CD3_stim_CITE_GEX_matrix.tsv.gz) | TSV                    |
+
+4. [ADT matrices for CITE-seq from simulated condition](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM4732116)
+
+| **Supplementary file**                   | **Size** | **Download**                                                 | **File type/resource** |
+| ---------------------------------------- | -------- | ------------------------------------------------------------ | ---------------------- |
+| GSM4732116_CD28_CD3_stim_CITE_ADT.tsv.gz | 33.5 Mb  | [(ftp)](https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4732nnn/GSM4732116/suppl/GSM4732116_CD28_CD3_stim_CITE_ADT.tsv.gz)[(http)](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM4732116&format=file&file=GSM4732116_CD28_CD3_stim_CITE_ADT.tsv.gz) | TSV                    |
 
 ### 5.2 Mouse atlas data
 
